@@ -290,6 +290,45 @@ a.nav{transition:opacity .2s} a.nav:hover{opacity:.75} a.nav:focus-visible,.pill
   if (window.visualViewport) window.visualViewport.addEventListener('resize', schedule);
   layout();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+
+  // One opening composition. Animate only paint properties so the responsive
+  // stage transforms remain authoritative; cancel every effect at the end.
+  if (Element.prototype.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var entrance = [];
+    var ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    function reveal(element, frames, delay, duration, easing) {
+      entrance.push(element.animate(frames, {
+        delay: delay, duration: duration, easing: easing || ease, fill: 'both'
+      }));
+    }
+
+    // The fixed texture stays still. The foreground artwork opens down its
+    // central ribbon, followed by the two words and the supporting content.
+    reveal($('hero'), [
+      { clipPath: 'inset(0 0 100% 0)' },
+      { clipPath: 'inset(0 0 0% 0)' }
+    ], 0, 1260);
+    reveal($('logo'), [{ opacity: 0 }, { opacity: 1 }], 180, 520);
+    reveal(stage.querySelector('nav'), [{ opacity: 0 }, { opacity: 1 }], 220, 480);
+    reveal($('new'), [
+      { clipPath: 'inset(100% 0 0 0)', opacity: 0.65 },
+      { clipPath: 'inset(0% 0 0 0)', opacity: 1 }
+    ], 390, 830);
+    reveal($('coll'), [
+      { clipPath: 'inset(100% 0 0 0)', opacity: 0.65 },
+      { clipPath: 'inset(0% 0 0 0)', opacity: 1 }
+    ], 560, 790);
+    reveal($('tag'), [{ opacity: 0 }, { opacity: 1 }], 1030, 520);
+    reveal($('see'), [
+      { clipPath: 'inset(0 100% 0 0)', opacity: 0.7 },
+      { clipPath: 'inset(0 0% 0 0)', opacity: 1 }
+    ], 1160, 670);
+    reveal($('decoL'), [{ opacity: 0 }, { opacity: 1 }], 1270, 520);
+    reveal($('decoR'), [{ opacity: 0 }, { opacity: 1 }], 1270, 520);
+
+    Promise.allSettled(entrance.map(function (animation) { return animation.finished; }))
+      .then(function () { entrance.forEach(function (animation) { animation.cancel(); }); });
+  }
 })();
 
 </script>
